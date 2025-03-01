@@ -1,3 +1,5 @@
+*.ipynb
+indoor-env
 data
 tutorials
 .DS_Store
