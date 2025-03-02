@@ -1,0 +1,162 @@
+import os
+import cv2
+import time
+import json
+import imutils
+import streamlit as st
+from datetime import datetime
+from utils import preprocess_image, subtract_images
+
+# Initialise variables
+run = False
+reference_frame = None
+movement_detected = False
+recording_frames = []  # To store 150 frames for saving
+frame_count = 0
+recordings_folder_path = "data/recordings"
+os.makedirs(recordings_folder_path, exist_ok=True)  # Ensure folder exists
+
+# Page Configuration
+st.set_page_config(layout="wide")
+
+# Title
+st.markdown("<h1 style='text-align: center; color: white;'>Live Intruder Detection</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: white;'>Monitor your room in real-time.</h3>", unsafe_allow_html=True)
+st.markdown("<h5 style='text-align: center; color: white;'>Click 'Start Live Feed' to begin.</h5>", unsafe_allow_html=True)
+st.markdown("<h5 style='text-align: center; color: white;'>Click 'Stop Live Feed' to stop the real-time detection.</h5>", unsafe_allow_html=True)
+
+# Camera setup
+FRAME_WINDOW = st.image([])
+camera = cv2.VideoCapture(0)
+
+# Buttons setup
+col1, col2 = st.columns([1,1])  # Adjust column ratios as needed
+with col1:
+    if st.button("Start Live Feed", use_container_width=True, key='start'):
+        st.write("Live feed started!")
+        run = True
+with col2:
+    if st.button("Stop Live Feed", use_container_width=True, key='stop'):
+        st.write("Live feed stopped!")
+        run = False
+
+
+# time.sleep(1) # time to prepare demo
+
+# Video Streaming Loop
+while run:
+
+    # Load frames from camera
+    try: 
+        # try reading from camera/video feed
+        status, input_rgb_frame = camera.read()
+    except Exception as e:
+        print(e)
+        print('Unable to show webcam - you need to enable permissions on your machine')
+        break
+
+    # preprocess input image
+    resized_input_rgb_frame, resized_input_gray_frame = preprocess_image(input_rgb_frame)
+
+    # initialise first previous frame, this code is only run at the start
+    if reference_frame is None:
+        reference_frame = resized_input_gray_frame
+        continue
+
+    # get the subtract frames and threshold to make diff more obvious
+    abs_diff, thresh_abs_diff = subtract_images(reference_frame, resized_input_gray_frame)
+    dilated_image = cv2.dilate(thresh_abs_diff, None, iterations=5)
+
+    # get contours
+    cnts = cv2.findContours(dilated_image.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts) # each array is a coordinate with a contour in the image
+
+    # iterate the contours - draw bounding box of the large contour areas
+    # can also draw contours instead of bbox - cv2.drawContours(frame1, contours, -1, (0, 0, 255), 2)
+    for c in cnts:            
+        if cv2.contourArea(c) > 10000: # only want to take the large contours to avoid noise
+            (x, y, w, h) = cv2.boundingRect(c) # generate the bounding box coordinates
+            cv2.rectangle(
+                img=resized_input_rgb_frame, 
+                pt1=(x, y), 
+                pt2=(x+w, y+h), 
+                color=(0, 0, 255), 
+                thickness=3
+            ) # draws the bbox on the src image
+            movement_detected = True
+
+            # Determine intruder location (left or right)
+            frame_center = 1280 // 2  # Half of frame width
+            if (x + w) // 2 < frame_center:
+                intruder_position = "Left"
+            else:
+                intruder_position = "Right"
+
+    intruder_type = "Small object" if max([cv2.contourArea(c) for c in cnts], default=0) < 2000 else "Big object"
+
+    # Show frame output
+    FRAME_WINDOW.image(resized_input_rgb_frame, channels="BGR")
+
+    # If movement detected, start recording the next 150 frames
+    if movement_detected:
+        recording_frames.append(resized_input_rgb_frame)
+        frame_count += 1
+
+        if frame_count == 150:  # After 150 frames (5 seconds at 30 FPS)
+
+            # SAVE VIDEO
+            video_index = len([f for f in os.listdir(recordings_folder_path) if not f.startswith('.')]) + 1
+            output_folder = f"{recordings_folder_path}/motion_{video_index}"
+            os.makedirs(output_folder, exist_ok=True)  # Ensure folder exists
+            output_video_filename = f"{output_folder}/motion.mp4"
+            
+            # Define video writer
+            fourcc = cv2.VideoWriter_fourcc(*"avc1")  # H.264 codec
+            out = cv2.VideoWriter(output_video_filename, fourcc, 30, (1280, 720))
+
+            for frame in recording_frames:
+                out.write(frame)
+
+            out.release()
+            # print(f"Saved at: {output_video_filename}")
+
+            # SAVE METADATA
+
+            # Get current timestamp
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            metadata_entry = {
+                "video_file": output_video_filename,
+                "timestamp": timestamp,
+                "intruder_position": intruder_position,
+                "intruder_type": intruder_type
+            }
+
+            # Save metadata to a JSON file
+            metadata_filename = f"{output_folder}/metadata.json"
+            with open(metadata_filename, "w") as f:
+                json.dump(metadata_entry, f)
+            # print(f"Saved metadata: {metadata_entry} at: {metadata_filename}")
+
+            # Reset for next detection
+            recording_frames = []
+            movement_detected = False
+            frame_count = 0
+
+# Release Camera
+camera.release()
+
+
+# # ORIGINAL CODE ARCHIVED
+# # import cv2
+# # import streamlit as st
+
+# # st.title("Webcam Live Feed")
+# # run = st.checkbox('Show Live Feed')
+# # FRAME_WINDOW = st.image([])
+# # camera = cv2.VideoCapture(0)
+
+# # while run:
+# #     _, frame = camera.read()
+# #     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+# #     FRAME_WINDOW.image(frame)
