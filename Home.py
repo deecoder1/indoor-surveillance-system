@@ -1,19 +1,36 @@
 import os
 import cv2
-import time
 import json
 import imutils
 import streamlit as st
 from datetime import datetime
+from dotenv import load_dotenv
+from email_test import send_email_alert
 from utils import preprocess_image, subtract_images
 
-# Initialise variables
+load_dotenv()
+
+# User Input variables
+recordings_folder_path = "data/recordings"
+sender_email = os.getenv('SENDER_EMAIL')
+sender_password = os.getenv('SENDER_PASSWORD')
+recipient_email = 'haidiazaman@gmail.com'
+
+# Motion detection variables
+final_width = 1280
+final_height = 720
+binary_threshold = 100
+min_contour_area_to_trigger_detection = 10000
+max_small_object_area = 2500
+
+# Initialise code variables 
 run = False
 reference_frame = None
 movement_detected = False
 recording_frames = []  # To store 150 frames for saving
 frame_count = 0
-recordings_folder_path = "data/recordings"
+
+# Create recordings folder
 os.makedirs(recordings_folder_path, exist_ok=True)  # Ensure folder exists
 
 # Page Configuration
@@ -50,13 +67,14 @@ while run:
     try: 
         # try reading from camera/video feed
         status, input_rgb_frame = camera.read()
+
     except Exception as e:
         print(e)
         print('Unable to show webcam - you need to enable permissions on your machine')
         break
 
     # preprocess input image
-    resized_input_rgb_frame, resized_input_gray_frame = preprocess_image(input_rgb_frame)
+    resized_input_rgb_frame, resized_input_gray_frame = preprocess_image(input_rgb_frame, final_width=final_width, final_height=final_height)
 
     # initialise first previous frame, this code is only run at the start
     if reference_frame is None:
@@ -64,7 +82,7 @@ while run:
         continue
 
     # get the subtract frames and threshold to make diff more obvious
-    abs_diff, thresh_abs_diff = subtract_images(reference_frame, resized_input_gray_frame)
+    abs_diff, thresh_abs_diff = subtract_images(reference_frame, resized_input_gray_frame, binary_threshold=binary_threshold)
     dilated_image = cv2.dilate(thresh_abs_diff, None, iterations=5)
 
     # get contours
@@ -74,7 +92,7 @@ while run:
     # iterate the contours - draw bounding box of the large contour areas
     # can also draw contours instead of bbox - cv2.drawContours(frame1, contours, -1, (0, 0, 255), 2)
     for c in cnts:            
-        if cv2.contourArea(c) > 10000: # only want to take the large contours to avoid noise
+        if cv2.contourArea(c) > min_contour_area_to_trigger_detection: # only want to take the large contours to avoid noise
             (x, y, w, h) = cv2.boundingRect(c) # generate the bounding box coordinates
             cv2.rectangle(
                 img=resized_input_rgb_frame, 
@@ -92,7 +110,7 @@ while run:
             else:
                 intruder_position = "Right"
 
-    intruder_type = "Small object" if max([cv2.contourArea(c) for c in cnts], default=0) < 2000 else "Big object"
+    intruder_type = "Small object" if max([cv2.contourArea(c) for c in cnts], default=0) < max_small_object_area else "Big object"
 
     # Show frame output
     FRAME_WINDOW.image(resized_input_rgb_frame, channels="BGR")
@@ -112,7 +130,7 @@ while run:
             
             # Define video writer
             fourcc = cv2.VideoWriter_fourcc(*"avc1")  # H.264 codec
-            out = cv2.VideoWriter(output_video_filename, fourcc, 30, (1280, 720))
+            out = cv2.VideoWriter(output_video_filename, fourcc, 30, (final_width, final_height))
 
             for frame in recording_frames:
                 out.write(frame)
@@ -138,6 +156,19 @@ while run:
                 json.dump(metadata_entry, f)
             # print(f"Saved metadata: {metadata_entry} at: {metadata_filename}")
 
+            # Show screen notification 
+            st.toast("Intruder detected! New recordings has been added.", icon=":material/update:")
+
+            # Send email notification
+            _ = send_email_alert(
+                sender_email=sender_email,
+                sender_password=sender_password,
+                recipient_email=recipient_email,
+                intruder_type=intruder_type,
+                position=intruder_position,
+                timestamp=timestamp
+            )
+
             # Reset for next detection
             recording_frames = []
             movement_detected = False
@@ -145,18 +176,3 @@ while run:
 
 # Release Camera
 camera.release()
-
-
-# # ORIGINAL CODE ARCHIVED
-# # import cv2
-# # import streamlit as st
-
-# # st.title("Webcam Live Feed")
-# # run = st.checkbox('Show Live Feed')
-# # FRAME_WINDOW = st.image([])
-# # camera = cv2.VideoCapture(0)
-
-# # while run:
-# #     _, frame = camera.read()
-# #     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-# #     FRAME_WINDOW.image(frame)

@@ -1,9 +1,7 @@
 import os 
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
 import imutils
-import time
 
 # load and preprocess the image
 def load_and_preprocess(image_path):

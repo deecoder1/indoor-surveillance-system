@@ -2,8 +2,6 @@ from datetime import datetime
 import json
 import os 
 import cv2
-import numpy as np
-import matplotlib.pyplot as plt
 import imutils
 import time
 
