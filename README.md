@@ -19,8 +19,8 @@ consolidates code for indoor-surveillance system - web app
  
 ### App variables - change these according to your needs
 - set recipient_email = '-your own gmail address or another address you want to send notifications to-'
-- final_width = 1280
-- final_height = 720
+- final_width = 1280 # size of the video display, dont need to change
+- final_height = 720 # size of the video display, dont need to change
 - binary_threshold = 100 # change this according to different lighting conditions
 - min_contour_area_to_trigger_detection = 10000 # change this to change the minimum bounding box area required to trigger detection (detection is triggered whenever you see a red bounding box on the screen)
 - max_small_object_area = 2500 # this is a threshold btwn considering if an object is considered small or big object
