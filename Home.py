@@ -14,7 +14,7 @@ load_dotenv()
 recordings_folder_path = "data/recordings"
 sender_email = os.getenv('SENDER_EMAIL')
 sender_password = os.getenv('SENDER_PASSWORD')
-recipient_email = 'haidiazaman@gmail.com'
+recipient_email = ''
 
 # Motion detection variables
 final_width = 1280
