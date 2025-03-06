@@ -6,6 +6,6 @@ consolidates code for indoor-surveillance system - web app
 
 -create a new python venv
 
-```pip install -r requirements.txt
+```pip install -r requirements.txt```
 
-streamlit run Home.py```
+```streamlit run Home.py```
