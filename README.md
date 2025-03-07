@@ -1,6 +1,13 @@
 # indoor-surveillance-system
 consolidates code for indoor-surveillance system - web app
 
+## App workflow
+1. App home page
+!(imgs/homepage.png)
+
+3. 
+
+
 ## Pre-requisites
 
 ### Install requirements
