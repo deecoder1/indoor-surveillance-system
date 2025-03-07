@@ -3,7 +3,7 @@ consolidates code for indoor-surveillance system - web app
 
 ## App workflow
 1. App home page
-!(imgs/homepage.png)
+![homepage](imgs/homepage.png)
 
 3. 
 
