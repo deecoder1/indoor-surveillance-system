@@ -2,6 +2,7 @@
 This project is a home security system that uses motion detection to identify intruders and send real-time alerts. The system captures video footage when movement is detected, classifies the intruder (e.g., big or small object), and uploads the recordings to a web dashboard for review.
 
 Key Features:
+
 ✅ Real-time Motion Detection – Captures video clips when movement is detected.
 
 ✅ Intruder Classification – Determines if the intruder is a big or small object.
