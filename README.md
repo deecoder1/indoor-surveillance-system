@@ -1,10 +1,13 @@
 # indoor-surveillance-system
-This project is a home security system that uses motion detection to identify intruders and send real-time alerts. The system captures video footage when movement is detected, classifies the intruder (e.g., human or animal), and uploads the recordings to a web dashboard for review.
+This project is a home security system that uses motion detection to identify intruders and send real-time alerts. The system captures video footage when movement is detected, classifies the intruder (e.g., big or small object), and uploads the recordings to a web dashboard for review.
 
 Key Features:
 ✅ Real-time Motion Detection – Captures video clips when movement is detected.
-✅ Intruder Classification – Determines if the intruder is a person or an animal.
+
+✅ Intruder Classification – Determines if the intruder is a big or small object.
+
 ✅ Email Alerts – Sends notifications with metadata (e.g., timestamp, location of movement).
+
 ✅ Web Dashboard – Allows users to view, manage, and delete recorded clips.
 
 The goal is to create an efficient and user-friendly security system that enhances indoor surveillance. 🚀
