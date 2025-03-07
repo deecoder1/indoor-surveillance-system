@@ -3,9 +3,23 @@ consolidates code for indoor-surveillance system - web app
 
 ## App workflow
 1. App home page
-![homepage](imgs/homepage.png)
+![homepage.png](imgs/homepage.png)
 
-3. 
+2. Start video live stream
+
+![start_screen_record.png](imgs/start_screen_record.png)
+
+3. Motion detection
+
+![motion_detection.png](imgs/motion_detection.png)
+
+4. View page storing all video recordings and metadata
+
+![view_recordings_page.png](imgs/view_recordings_page.png)
+
+5. Watch a recording video
+
+![play_recordings.png](imgs/play_recordings.png)
 
 
 ## Pre-requisites
